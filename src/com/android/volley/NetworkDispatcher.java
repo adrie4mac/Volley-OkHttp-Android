@@ -20,13 +20,11 @@ import android.annotation.TargetApi;
 import android.net.TrafficStats;
 import android.os.Build;
 import android.os.Process;
-import android.util.Pair;
+import android.os.SystemClock;
 
-import com.android.volley.Cache.Entry;
 import com.android.volley.Request.ReturnStrategy;
 
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Provides a thread for performing network dispatch from a queue of requests.
@@ -87,8 +85,9 @@ public class NetworkDispatcher extends Thread {
     @Override
     public void run() {
         Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
-        Request<?> request;
         while (true) {
+            long startTimeMs = SystemClock.elapsedRealtime();
+            Request<?> request;
             try {
                 // Take a request from the queue.
                 mProcessing = false;
@@ -152,13 +151,16 @@ public class NetworkDispatcher extends Thread {
                 if (request.hasHadResponseDelivered() && request.getReturnStrategy() == ReturnStrategy.NETWORK_IF_NO_CACHE) {
                     continue;
                 }
+                volleyError.setNetworkTimeMs(SystemClock.elapsedRealtime() - startTimeMs);
                 parseAndDeliverNetworkError(request, volleyError);
             } catch (Exception e) {
                 VolleyLog.e(e, "Unhandled exception %s", e.toString());
                 if (request.hasHadResponseDelivered() && request.getReturnStrategy() == ReturnStrategy.NETWORK_IF_NO_CACHE) {
                     continue;
                 }
-                mDelivery.postError(request, new VolleyError(e));
+                VolleyError volleyError = new VolleyError(e);
+                volleyError.setNetworkTimeMs(SystemClock.elapsedRealtime() - startTimeMs);
+                mDelivery.postError(request, volleyError);
             }
         }
     }
