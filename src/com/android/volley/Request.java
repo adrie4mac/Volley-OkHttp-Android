@@ -667,4 +667,8 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     public void onParseOOM(OutOfMemoryError e) {
         // no-op
     }
+
+    public void expireCache() {
+        // no - op
+    }
 }

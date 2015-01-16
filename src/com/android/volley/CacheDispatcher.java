@@ -16,11 +16,11 @@
 
 package com.android.volley;
 
-import java.util.concurrent.BlockingQueue;
-
 import android.os.Process;
 
 import com.android.volley.Request.ReturnStrategy;
+
+import java.util.concurrent.BlockingQueue;
 
 /**
  * Provides a thread for performing cache triage on a queue of requests.
@@ -164,5 +164,12 @@ public class CacheDispatcher extends Thread {
     public boolean willMissCache(Request request) {
         Cache.Entry entry = mCache.getHeaders(request.getCacheKey());
         return entry == null || entry.isExpired();
+    }
+
+    public void expireCache(Request request) {
+        Cache.Entry entry = mCache.getHeaders(request.getCacheKey());
+        if (entry != null) {
+            entry.expireCache();
+        }
     }
 }
