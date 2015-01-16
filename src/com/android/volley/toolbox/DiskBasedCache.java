@@ -226,7 +226,6 @@ public class DiskBasedCache implements Cache {
             return;
         }
 
-
         pruneIfNeeded(entry.data.length, true);
         File file = getFileForKey(key);
         try {
@@ -245,6 +244,17 @@ public class DiskBasedCache implements Cache {
         }
 
         mMemoryMap.remove(key);
+    }
+
+    @Override
+    public void updateEntry(String cacheKey, Entry entry) {
+        mCacheWriteHanderThread.updateEntryAsync(cacheKey, entry);
+    }
+
+    private void updateEntrySynchronous(String key, Entry entry) {
+        Entry cachedEntry = get(key);
+        entry.data = cachedEntry.data;
+        put(key, entry, true);
     }
 
     /**
@@ -656,6 +666,15 @@ public class DiskBasedCache implements Cache {
 
         public void clear() {
             mHandler.removeCallbacksAndMessages(null);
+        }
+
+        public void updateEntryAsync(final String cacheKey, final Entry entry) {
+            mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    updateEntrySynchronous(cacheKey, entry);
+                }
+            });
         }
     }
 
